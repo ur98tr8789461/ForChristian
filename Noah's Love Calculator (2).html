@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noah's Love Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Flat, Box-less, Dark Pink Theme */
+        :root {
+            --bg-color: #0a0205; 
+            --accent-pink: #ff2a7a;
+            --accent-pink-hover: #ff005d;
+            --input-bg: #17050c;
+            --border-color: #330b1b;
+            --text-main: #ffffff;
+            --text-muted: #fca5a5;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 50px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            will-change: opacity, transform;
+        }
+
+        /* --- ENTRANCE ANIMATIONS --- */
+        .animate-up {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+
+        @keyframes slideUpFade { to { opacity: 1; transform: translateY(0); } }
+
+        /* --- SCREEN TRANSITION ANIMATIONS --- */
+        @keyframes fadeOutUp {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 { 
+            font-family: 'Montserrat', sans-serif; 
+            font-size: 2.5rem; 
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -1px;
+            margin-bottom: 5px;
+        }
+
+        p.subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 20px; }
+
+        .names-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            color: var(--text-main);
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            appearance: none; 
+        }
+
+        select {
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ff2a7a%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px top 50%;
+            background-size: 12px auto;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent-pink);
+            box-shadow: 0 0 15px rgba(255, 42, 122, 0.15);
+            transform: translateY(-2px);
+        }
+
+        input::placeholder { color: #885c6f; }
+
+        .questions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            margin-bottom: 20px;
+        }
+
+        .question-item label {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 10px;
+            color: #ffb3d1;
+        }
+
+        button.primary-btn {
+            background-color: var(--accent-pink);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button.primary-btn:active { transform: scale(0.96); }
+        button.primary-btn:hover:not(:disabled) {
+            background-color: var(--accent-pink-hover);
+            box-shadow: 0 8px 25px rgba(255, 42, 122, 0.4);
+        }
+        
+        button.primary-btn:disabled {
+            background-color: var(--border-color);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* --- LOADING SCREEN --- */
+        #loadingScreen {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+            text-align: center;
+        }
+
+        .loading-pulse { animation: pulseText 1.5s infinite; }
+
+        @keyframes pulseText {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; text-shadow: 0 0 15px rgba(255, 255, 255, 0.3); }
+            100% { opacity: 0.6; }
+        }
+
+        #loadingScreen h2 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            color: var(--text-main);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            max-width: 300px;
+            height: 8px;
+            background-color: var(--input-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--accent-pink);
+            border-radius: 8px;
+            transition: width 2.5s cubic-bezier(0.65, 0, 0.35, 1);
+            box-shadow: 0 0 10px var(--accent-pink);
+        }
+
+        /* --- RESULTS SCREEN --- */
+        #resultsScreen {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            height: 80vh;
+        }
+
+        .score-display {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 7rem;
+            font-weight: 800;
+            color: var(--accent-pink);
+            line-height: 1;
+            letter-spacing: -3px;
+            margin-bottom: 10px;
+            text-shadow: 0 10px 30px rgba(255, 42, 122, 0.3);
+            transform: scale(0.9);
+            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        @keyframes popIn { to { opacity: 1; transform: scale(1); } }
+
+        .score-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            opacity: 0;
+            animation: slideUpFade 0.5s forwards;
+            animation-delay: 0.5s;
+        }
+
+        .score-desc {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            max-width: 400px;
+            opacity: 0;
+            animation: slideUpFade 0.5s forwards;
+            animation-delay: 0.7s;
+        }
+
+        .reset-btn {
+            margin-top: 40px;
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            opacity: 0;
+            animation: slideUpFade 0.5s forwards;
+            animation-delay: 0.9s;
+        }
+
+        .reset-btn:hover {
+            background: var(--input-bg);
+            color: white;
+            border-color: var(--accent-pink);
+        }
+
+        .error-msg {
+            color: #ff2a7a;
+            font-weight: bold;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MAIN FORM SCREEN -->
+    <div class="container" id="mainForm">
+        <header class="animate-up delay-1">
+            <h1 id="appTitle">Noah's Love Calculator</h1>
+            <p class="subtitle" id="subtitleText">Loading questions from server...</p>
+        </header>
+
+        <div class="names-grid animate-up delay-2">
+            <input type="text" id="name1" placeholder="First Name" autocomplete="off">
+            <input type="text" id="name2" placeholder="Second Name" autocomplete="off">
+        </div>
+
+        <div class="questions-list animate-up delay-3" id="questionsContainer">
+            <!-- Questions injected via fetch API -->
+        </div>
+        
+        <div id="errorContainer" class="error-msg"></div>
+
+        <button class="primary-btn animate-up delay-4" id="calcBtn" onclick="startCalculation()" disabled>Loading...</button>
+    </div>
+
+    <!-- LOADING SCREEN -->
+    <div class="container" id="loadingScreen">
+        <h2 class="loading-pulse">Calculating Metrics...</h2>
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+    </div>
+
+    <!-- RESULTS SCREEN -->
+    <div class="container" id="resultsScreen">
+        <div class="score-display" id="finalScore">0%</div>
+        <div class="score-title" id="scoreTitle">Match Title</div>
+        <div class="score-desc" id="scoreDesc">Match Description</div>
+        
+        <button class="reset-btn" onclick="resetApp()">Calculate Another</button>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION: INSERT YOUR JSON LINK HERE
+        // ==========================================
+        // Example: 'https://raw.githubusercontent.com/YourName/Repo/main/questions.json'
+        // If testing on your computer with both files in the same folder, 'questions.json' works!
+        const YOUR_JSON_URL = 'questions.json'; 
+
+        // Global variables for Math Engine
+        let maxPossibleQuizScore = 0;
+        let minPossibleQuizScore = 0;
+        let loadedQuestionsCount = 0;
+
+        // Initialize App on Load
+        document.addEventListener('DOMContentLoaded', fetchQuestions);
+
+        async function fetchQuestions() {
+            try {
+                const response = await fetch(YOUR_JSON_URL);
+                if (!response.ok) throw new Error("Network response was not ok. Check your JSON link!");
+                
+                const quizData = await response.json();
+                loadedQuestionsCount = quizData.length;
+                
+                buildMathEngine(quizData);
+                buildUI(quizData);
+
+                // Enable the app
+                document.getElementById('subtitleText').innerText = `Complete the ${loadedQuestionsCount}-point compatibility matrix.`;
+                const calcBtn = document.getElementById('calcBtn');
+                calcBtn.disabled = false;
+                calcBtn.innerText = "Analyze Connection";
+
+            } catch (error) {
+                console.error("Error loading JSON:", error);
+                document.getElementById('subtitleText').innerText = "System Error.";
+                document.getElementById('errorContainer').innerText = "Could not load questions. If you are hosting this, ensure your JSON URL is correct and supports CORS. Error: " + error.message;
+            }
+        }
+
+        function buildMathEngine(quizData) {
+            maxPossibleQuizScore = 0;
+            minPossibleQuizScore = 0;
+
+            quizData.forEach(item => {
+                let maxOpt = -Infinity;
+                let minOpt = Infinity;
+                item.opts.forEach(opt => {
+                    if (opt.v > maxOpt) maxOpt = opt.v;
+                    if (opt.v < minOpt) minOpt = opt.v;
+                });
+                maxPossibleQuizScore += maxOpt;
+                minPossibleQuizScore += minOpt;
+            });
+        }
+
+        function buildUI(quizData) {
+            const qContainer = document.getElementById('questionsContainer');
+            qContainer.innerHTML = ''; // Clear previous
+
+            quizData.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'question-item';
+                
+                let html = `<label>${index + 1}. ${item.q}</label><select class="score-dropdown">`;
+                item.opts.forEach(opt => {
+                    html += `<option value="${opt.v}">${opt.t}</option>`;
+                });
+                html += `</select>`;
+                
+                div.innerHTML = html;
+                qContainer.appendChild(div);
+            });
+        }
+
+        // Helper for smooth screen transitions
+        function switchScreen(oldScreenId, newScreenId, callback) {
+            const oldScreen = document.getElementById(oldScreenId);
+            const newScreen = document.getElementById(newScreenId);
+            
+            oldScreen.style.animation = 'fadeOutUp 0.4s forwards';
+            
+            setTimeout(() => {
+                oldScreen.style.display = 'none';
+                oldScreen.style.animation = ''; 
+                newScreen.style.display = 'flex';
+                newScreen.style.animation = 'fadeInDown 0.4s forwards';
+                if (callback) callback();
+            }, 400); 
+        }
+
+        // Count up animation
+        function animatePercentage(element, finalValue, duration) {
+            let start = 0;
+            let startTime = null;
+            function animationStep(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                const easeOut = 1 - Math.pow(1 - progress, 4);
+                const currentVal = Math.floor(easeOut * finalValue);
+                
+                element.innerText = currentVal + "%";
+                if (progress < 1) {
+                    window.requestAnimationFrame(animationStep);
+                } else {
+                    element.innerText = finalValue + "%";
+                }
+            }
+            window.requestAnimationFrame(animationStep);
+        }
+
+        function startCalculation() {
+            const name1 = document.getElementById('name1').value.trim().toLowerCase();
+            const name2 = document.getElementById('name2').value.trim().toLowerCase();
+            const btn = document.getElementById('calcBtn');
+
+            if (!name1 || !name2) {
+                alert("Please enter both names before analyzing.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Analyzing...";
+
+            switchScreen('mainForm', 'loadingScreen', () => {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        document.getElementById('progressBar').style.width = '100%';
+                    });
+                });
+
+                setTimeout(() => {
+                    calculateFinalScore(name1, name2);
+                }, 2500);
+            });
+        }
+
+        function calculateFinalScore(name1, name2) {
+            // 1. Calculate Name Score (Max 30 points)
+            let nameScore = 0;
+            const combined = name1 + name2;
+            for (let i = 0; i < combined.length; i++) {
+                nameScore += combined.charCodeAt(i);
+            }
+            nameScore = nameScore % 31; // Range: 0 to 30
+
+            // 2. Calculate raw Quiz Score
+            let rawQuizScore = 0;
+            const dropdowns = document.querySelectorAll('.score-dropdown');
+            dropdowns.forEach(dropdown => {
+                rawQuizScore += parseInt(dropdown.value);
+            });
+
+            // 3. Normalize the Quiz Score to a 0-70 range based on the JSON limits
+            let normalizedQuizScore = ((rawQuizScore - minPossibleQuizScore) / (maxPossibleQuizScore - minPossibleQuizScore)) * 70;
+
+            // 4. Combine for Final Score (Max 100)
+            let total = Math.round(nameScore + normalizedQuizScore);
+            
+            // Safety caps
+            if (total > 100) total = 100;
+            if (total < 0) total = 0;
+
+            // 5. Update UI Text
+            const titleEl = document.getElementById('scoreTitle');
+            const descEl = document.getElementById('scoreDesc');
+
+            if (total >= 90) {
+                titleEl.innerText = "Soulmate Status";
+                titleEl.style.color = "#ff2a7a";
+                descEl.innerText = "Your compatibility metrics are flawlessly aligned. This is a rare and beautiful connection.";
+            } else if (total >= 70) {
+                titleEl.innerText = "High Compatibility";
+                titleEl.style.color = "#ff85af";
+                descEl.innerText = "The chemistry is undeniable. You share excellent core values and habits.";
+            } else if (total >= 50) {
+                titleEl.innerText = "Average Connection";
+                titleEl.style.color = "#fca5a5";
+                descEl.innerText = "There is potential here, but it will require communication and compromise to work long-term.";
+            } else if (total >= 30) {
+                titleEl.innerText = "Friend Zone";
+                titleEl.style.color = "#b08596";
+                descEl.innerText = "Your lifestyles clash a bit too much for romance. You might be better off as good friends.";
+            } else {
+                titleEl.innerText = "Incompatible";
+                titleEl.style.color = "#6e4757";
+                descEl.innerText = "Red flags detected across the board. You are operating on completely different frequencies.";
+            }
+
+            // 6. Transition and Animate
+            switchScreen('loadingScreen', 'resultsScreen', () => {
+                const scoreDisplay = document.getElementById('finalScore');
+                scoreDisplay.innerText = "0%";
+                animatePercentage(scoreDisplay, total, 1500); 
+            });
+        }
+
+        function resetApp() {
+            switchScreen('resultsScreen', 'mainForm', () => {
+                const btn = document.getElementById('calcBtn');
+                btn.disabled = false;
+                btn.innerText = "Analyze Connection";
+
+                document.getElementById('progressBar').style.width = '0%';
+                document.getElementById('name1').value = '';
+                document.getElementById('name2').value = '';
+                
+                const dropdowns = document.querySelectorAll('.score-dropdown');
+                dropdowns.forEach(dd => dd.selectedIndex = 0);
+                
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                const animatedElements = document.querySelectorAll('.animate-up');
+                animatedElements.forEach(el => {
+                    el.style.animation = 'none';
+                    el.offsetHeight; 
+                    el.style.animation = null; 
+                });
+            });
+        }
+    </script>
+</body>
+</html>
