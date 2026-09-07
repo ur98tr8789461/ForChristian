@@ -46,7 +46,7 @@
             transform: translateY(30px);
             animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        
+
         .delay-1 { animation-delay: 0.1s; }
         .delay-2 { animation-delay: 0.2s; }
         .delay-3 { animation-delay: 0.3s; }
@@ -180,7 +180,7 @@
             background-color: var(--accent-pink-hover);
             box-shadow: 0 8px 25px rgba(255, 42, 122, 0.4);
         }
-        
+
         button.primary-btn:disabled {
             background-color: var(--border-color);
             color: var(--text-muted);
@@ -312,7 +312,7 @@
 
     <!-- MAIN FORM SCREEN -->
     <div class="container" id="mainForm">
-        
+
         <!-- Segmented Control Mode Selector -->
         <div class="mode-selector animate-up delay-1">
             <button id="btnCrush" class="mode-btn active" onclick="switchMode('crush')">Crush Chances</button>
@@ -332,7 +332,7 @@
         <div class="questions-list animate-up delay-4" id="questionsContainer">
             <!-- Questions injected via fetch API -->
         </div>
-        
+
         <div id="errorContainer" class="error-msg"></div>
 
         <button class="primary-btn animate-up delay-5" id="calcBtn" onclick="startCalculation()" disabled>Loading...</button>
@@ -351,14 +351,12 @@
         <div class="score-display" id="finalScore">0%</div>
         <div class="score-title" id="scoreTitle">Match Title</div>
         <div class="score-desc" id="scoreDesc">Match Description</div>
-        
+
         <button class="reset-btn" onclick="resetApp()">Calculate Another</button>
     </div>
 
     <script>
-        // ==========================================
-        // CONFIGURATION: INSERT YOUR JSON LINK HERE
-        // ==========================================
+        // CONFIGURATION
         const YOUR_JSON_URL = 'questions.json'; 
 
         // Global variables
@@ -374,9 +372,9 @@
             try {
                 const response = await fetch(YOUR_JSON_URL);
                 if (!response.ok) throw new Error("Network response was not ok. Check your JSON link!");
-                
+
                 allQuizData = await response.json();
-                
+
                 // Load the UI for the default mode (Crush)
                 loadModeData(currentMode);
 
@@ -393,21 +391,19 @@
         }
 
         function switchMode(mode) {
-            if (!allQuizData || currentMode === mode) return; // Wait until loaded or ignore if same mode
+            if (!allQuizData || currentMode === mode) return; 
 
             currentMode = mode;
-            
-            // Toggle active classes on buttons
+
             document.getElementById('btnCrush').classList.remove('active');
             document.getElementById('btnCouples').classList.remove('active');
-            
+
             if (mode === 'crush') {
                 document.getElementById('btnCrush').classList.add('active');
             } else {
                 document.getElementById('btnCouples').classList.add('active');
             }
 
-            // Animate out the old questions, load the new ones, animate them back in
             const qContainer = document.getElementById('questionsContainer');
             qContainer.style.opacity = '0';
             qContainer.style.transform = 'translateY(10px)';
@@ -423,8 +419,7 @@
         function loadModeData(mode) {
             const quizData = allQuizData[mode];
             const qCount = quizData.length;
-            
-            // Update subtitle
+
             const sub = mode === 'crush' 
                 ? `Analyze the ${qCount} metrics of dating potential.` 
                 : `Complete the ${qCount}-point compatibility matrix.`;
@@ -457,25 +452,24 @@
             quizData.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = 'question-item';
-                
+
                 let html = `<label>${index + 1}. ${item.q}</label><select class="score-dropdown">`;
                 item.opts.forEach(opt => {
                     html += `<option value="${opt.v}">${opt.t}</option>`;
                 });
                 html += `</select>`;
-                
+
                 div.innerHTML = html;
                 qContainer.appendChild(div);
             });
         }
 
-        // Helper for smooth screen transitions
         function switchScreen(oldScreenId, newScreenId, callback) {
             const oldScreen = document.getElementById(oldScreenId);
             const newScreen = document.getElementById(newScreenId);
-            
+
             oldScreen.style.animation = 'fadeOutUp 0.4s forwards';
-            
+
             setTimeout(() => {
                 oldScreen.style.display = 'none';
                 oldScreen.style.animation = ''; 
@@ -485,7 +479,6 @@
             }, 400); 
         }
 
-        // Count up animation
         function animatePercentage(element, finalValue, duration) {
             let start = 0;
             let startTime = null;
@@ -494,7 +487,7 @@
                 const progress = Math.min((timestamp - startTime) / duration, 1);
                 const easeOut = 1 - Math.pow(1 - progress, 4);
                 const currentVal = Math.floor(easeOut * finalValue);
-                
+
                 element.innerText = currentVal + "%";
                 if (progress < 1) {
                     window.requestAnimationFrame(animationStep);
@@ -531,85 +524,23 @@
             });
         }
 
+        // Updated function to force 100% output every time
         function calculateFinalScore(name1, name2) {
-            // 1. Calculate Name Score (Max 30 points)
-            let nameScore = 0;
-            const combined = name1 + name2;
-            for (let i = 0; i < combined.length; i++) {
-                nameScore += combined.charCodeAt(i);
-            }
-            nameScore = nameScore % 31; // Range: 0 to 30
+            let total = 100;
 
-            // 2. Calculate raw Quiz Score
-            let rawQuizScore = 0;
-            const dropdowns = document.querySelectorAll('.score-dropdown');
-            dropdowns.forEach(dropdown => {
-                rawQuizScore += parseInt(dropdown.value);
-            });
-
-            // 3. Normalize the Quiz Score to a 0-70 range based on the JSON limits
-            let normalizedQuizScore = ((rawQuizScore - minPossibleQuizScore) / (maxPossibleQuizScore - minPossibleQuizScore)) * 70;
-
-            // 4. Combine for Final Score (Max 100)
-            let total = Math.round(nameScore + normalizedQuizScore);
-            
-            // Safety caps
-            if (total > 100) total = 100;
-            if (total < 0) total = 0;
-
-            // 5. Update UI Text based on the MODE
             const titleEl = document.getElementById('scoreTitle');
             const descEl = document.getElementById('scoreDesc');
 
             if (currentMode === 'crush') {
-                // CRUSH TEXTS
-                if (total >= 90) {
-                    titleEl.innerText = "Guaranteed to Date";
-                    titleEl.style.color = "#ff2a7a";
-                    descEl.innerText = "The signals are off the charts. Stop waiting and make a move, they definitely like you back!";
-                } else if (total >= 70) {
-                    titleEl.innerText = "High Potential";
-                    titleEl.style.color = "#ff85af";
-                    descEl.innerText = "The vibes are incredibly strong. You have a massive chance of getting together soon.";
-                } else if (total >= 50) {
-                    titleEl.innerText = "It's Possible";
-                    titleEl.style.color = "#fca5a5";
-                    descEl.innerText = "There is some mutual interest, but you'll need to drop more obvious hints to see if it goes anywhere.";
-                } else if (total >= 30) {
-                    titleEl.innerText = "Deep Friendzone";
-                    titleEl.style.color = "#b08596";
-                    descEl.innerText = "They likely see you purely as a friend right now. Proceed with caution.";
-                } else {
-                    titleEl.innerText = "No Chance";
-                    titleEl.style.color = "#6e4757";
-                    descEl.innerText = "The metrics do not look good. It's probably time to move on and protect your peace.";
-                }
+                titleEl.innerText = "Guaranteed to Date";
+                titleEl.style.color = "#ff2a7a";
+                descEl.innerText = "The signals are off the charts. Stop waiting and make a move, they definitely like you back!";
             } else {
-                // COUPLES TEXTS
-                if (total >= 90) {
-                    titleEl.innerText = "Soulmate Status";
-                    titleEl.style.color = "#ff2a7a";
-                    descEl.innerText = "Your compatibility metrics are flawlessly aligned. This is a rare and beautiful connection.";
-                } else if (total >= 70) {
-                    titleEl.innerText = "High Compatibility";
-                    titleEl.style.color = "#ff85af";
-                    descEl.innerText = "The chemistry is undeniable. You share excellent core values and habits.";
-                } else if (total >= 50) {
-                    titleEl.innerText = "Average Connection";
-                    titleEl.style.color = "#fca5a5";
-                    descEl.innerText = "There is potential here, but it requires communication and compromise to work long-term.";
-                } else if (total >= 30) {
-                    titleEl.innerText = "Needs Serious Work";
-                    titleEl.style.color = "#b08596";
-                    descEl.innerText = "Your lifestyles clash quite a bit. You'll need to actively work on your differences.";
-                } else {
-                    titleEl.innerText = "Incompatible";
-                    titleEl.style.color = "#6e4757";
-                    descEl.innerText = "Red flags detected across the board. You are operating on completely different frequencies.";
-                }
+                titleEl.innerText = "Soulmate Status";
+                titleEl.style.color = "#ff2a7a";
+                descEl.innerText = "Your compatibility metrics are flawlessly aligned. This is a rare and beautiful connection.";
             }
 
-            // 6. Transition and Animate
             switchScreen('loadingScreen', 'resultsScreen', () => {
                 const scoreDisplay = document.getElementById('finalScore');
                 scoreDisplay.innerText = "0%";
@@ -626,13 +557,11 @@
                 document.getElementById('progressBar').style.width = '0%';
                 document.getElementById('name1').value = '';
                 document.getElementById('name2').value = '';
-                
+
                 const dropdowns = document.querySelectorAll('.score-dropdown');
                 dropdowns.forEach(dd => dd.selectedIndex = 0);
-                
+
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-                
-                // We don't reset the mode, we keep them on the tab they were on.
             });
         }
     </script>
